@@ -1,30 +1,30 @@
-import random
 import tkinter as tk
 from tkinter import messagebox
+import random
 
-def start_solver():
-    try:
-        n = int(entry.get())
-        if n < 4:
-            raise ValueError
-        messagebox.showinfo("ورودی صحیح", f"{n} وزیر وارد شد.")
-    except ValueError:
-        messagebox.showerror("خطا", "لطفاً عددی صحیح و بزرگ‌تر از ۳ وارد کنید.")
+def is_safe_bt(board, row, col, n):
+    for i in range(row):
+        if board[i][col] or \
+           (col - (row - i) >= 0 and board[i][col - (row - i)]) or \
+           (col + (row - i) < n and board[i][col + (row - i)]):
+            return False
+    return True
 
-root = tk.Tk()
-root.title("حل مسئله N وزیر")
+def solve_bt(board, row, n):
+    if row == n:
+        return True
+    for col in range(n):
+        if is_safe_bt(board, row, col, n):
+            board[row][col] = 1
+            if solve_bt(board, row + 1, n):
+                return True
+            board[row][col] = 0
+    return False
 
-label = tk.Label(root, text="تعداد n را وارد کنید:")
-label.pack(pady=10)
-
-entry = tk.Entry(root)
-entry.pack(pady=5)
-
-button = tk.Button(root, text="حل مسئله", command=start_solver)
-button.pack(pady=10)
-
-root.mainloop()
-
+def run_backtracking(n):
+    board = [[0] * n for _ in range(n)]
+    solve_bt(board, 0, n)
+    return board
 
 def fitness(chromosome):
     n = len(chromosome)
@@ -64,29 +64,47 @@ def run_genetic(n, generations=500):
         board[row][col] = 1
     return board
 
+def draw_board(board, title):
+    n = len(board)
+    cell_size = 50
+    win = tk.Toplevel()
+    win.title(title)
+    canvas = tk.Canvas(win, width=n*cell_size, height=n*cell_size)
+    canvas.pack()
+    for i in range(n):
+        for j in range(n):
+            x1, y1 = j*cell_size, i*cell_size
+            x2, y2 = x1+cell_size, y1+cell_size
+            color = "white" if (i + j) % 2 == 0 else "gray"
+            canvas.create_rectangle(x1, y1, x2, y2, fill=color)
+            if board[i][j] == 1:
+                canvas.create_oval(x1+10, y1+10, x2-10, y2-10, fill="red")
 
+def start_solver():
+    try:
+        n = int(entry.get())
+        if n < 4:
+            raise ValueError
+    except ValueError:
+        messagebox.showerror("خطا", "لطفاً عددی صحیح و بزرگ‌تر از ۳ وارد کنید.")
+        return
+    
+    board_bt = run_backtracking(n)
+    draw_board(board_bt, "الگوریتم پسگرد (Backtracking)")
 
-def is_safe_bt(board, row, col, n):
-    for i in range(row):
-        if board[i][col] or \
-           (col - (row - i) >= 0 and board[i][col - (row - i)]) or \
-           (col + (row - i) < n and board[i][col + (row - i)]):
-            return False
-    return True
+    board_ga = run_genetic(n)
+    draw_board(board_ga, "الگوریتم ژنتیک (Genetic Algorithm)")
 
-def solve_bt(board, row, n):
-    if row == n:
-        return True
-    for col in range(n):
-        if is_safe_bt(board, row, col, n):
-            board[row][col] = 1
-            if solve_bt(board, row + 1, n):
-                return True
-            board[row][col] = 0
-    return False
+root = tk.Tk()
+root.title("مسئله N وزیر - الگوریتم‌های مختلف")
 
-def run_backtracking(n):
-    board = [[0]*n for _ in range(n)]
-    if solve_bt(board, 0, n):
-        return board
-    return None
+label = tk.Label(root, text="تعداد n را وارد کنید:")
+label.pack(pady=10)
+
+entry = tk.Entry(root)
+entry.pack(pady=5)
+
+button = tk.Button(root, text="حل مسئله", command=start_solver)
+button.pack(pady=10)
+
+root.mainloop()
